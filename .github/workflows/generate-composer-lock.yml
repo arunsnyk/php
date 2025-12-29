@@ -1,0 +1,36 @@
+name: Generate composer.lock
+
+on:
+  workflow_dispatch:   # Manual trigger from GitHub UI
+
+jobs:
+  composer-lock:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer
+
+      - name: Validate composer.json
+        run: composer validate --strict
+
+      - name: Install dependencies and generate composer.lock
+        run: composer install --no-interaction --no-progress
+
+      - name: Commit composer.lock
+        run: |
+          if git status --porcelain | grep composer.lock; then
+            git config user.name "github-actions"
+            git config user.email "github-actions@github.com"
+            git add composer.lock
+            git commit -m "Generate composer.lock via GitHub Actions"
+            git push
+          else
+            echo "composer.lock already up to date"
+          fi
